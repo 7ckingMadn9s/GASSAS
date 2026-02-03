@@ -522,7 +522,7 @@ document.getElementById('serviceForm').addEventListener('submit', async function
     loader.classList.remove('hidden');
     submitBtn.disabled = true;
     
-    // Собираем данные формы
+    // Собираем данные
     const formData = {
         name: document.getElementById('name').value,
         phone: document.getElementById('phone').value,
@@ -547,80 +547,77 @@ document.getElementById('serviceForm').addEventListener('submit', async function
     }
     
     try {
-        // Адрес сервера (локальный при тестировании)
-        const SERVER_URL = 'https://script.google.com/macros/s/AKfycbwD4mZWm0WKYbzgeTY-W9Oz6-M9K1z1NbbSYeh2XWrvwTdvtkOhc2j-SpZHvs1aVKTBaQ/exec';
+        // ВАШИ ДАННЫЕ
+        const BOT_TOKEN = '8305687625:AAHFu4mrz_lA-Lor8hHfaZo20-_QeI3qxbU';
+        const CHAT_ID = '1139442447';
         
-        // Секретный ключ (должен совпадать с API_SECRET в файле .env)
-        const API_SECRET = 'gazservicepro2024secure';
+        // Формируем красивое сообщение
+        const messageText = `
+📋 <b>НОВАЯ ЗАЯВКА С САЙТА</b>
+
+👤 <b>Клиент:</b> ${formData.name}
+📞 <b>Телефон:</b> <code>${formData.phone}</code>
+📧 <b>Email:</b> ${formData.email}
+📍 <b>Адрес:</b> ${formData.address}
+
+🛠 <b>Тип услуги:</b> ${formData.serviceType === 'heating' ? '🔥 Отопление' : '⛽ Газовая служба'}
+🔧 <b>Услуга:</b> ${formData.service || 'Не указана'}
+📝 <b>Доп. опции:</b> ${formData.extras || 'Не выбраны'}
+
+📅 <b>Дата:</b> ${formData.date || 'Не указана'}
+⏰ <b>Время:</b> ${formData.time || 'Любое'}
+
+💬 <b>Комментарий:</b> ${formData.message || 'Нет комментариев'}
+
+⏳ <b>Получено:</b> ${formData.timestamp}
+        `.trim();
         
-        console.log('📤 Отправляю заявку на сервер:', formData);
-        
-        // Отправляем данные на сервер
-        const response = await fetch(SERVER_URL, {
+        // Отправляем напрямую в Telegram API
+        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-Secret': API_SECRET
-            },
-            body: JSON.stringify(formData)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: CHAT_ID,
+                text: messageText,
+                parse_mode: 'HTML'
+            })
         });
         
         const result = await response.json();
-        console.log('📥 Ответ сервера:', result);
         
-        // Проверяем ответ
-        if (result.success) {
-            // Показать сообщение об успехе
+        if (result.ok) {
+            // Успех
             messageBox.innerHTML = `
-                <i class="fas fa-check-circle" style="font-size: 24px; margin-bottom: 10px;"></i>
-                <h3 style="margin-bottom: 10px;">Заявка успешно отправлена!</h3>
-                <p>Наш специалист свяжется с вами в течение 30 минут для подтверждения заявки.</p>
-                <p style="margin-top: 10px; font-size: 14px; color: #666;">Номер заявки: #${result.application_id}</p>
-                <p style="font-size: 12px; margin-top: 5px;">Сообщение отправлено в Telegram администратору</p>
+                <i class="fas fa-check-circle"></i>
+                <h3>Заявка отправлена!</h3>
+                <p>Мы свяжемся с вами в течение 30 минут.</p>
+                <small>ID: ${result.result.message_id}</small>
             `;
             messageBox.className = 'message success';
             
-            // Очистить форму
+            // Очистка формы
             document.getElementById('serviceForm').reset();
-            document.getElementById('heatingOptions').classList.add('hidden');
-            document.getElementById('gasOptions').classList.add('hidden');
+            document.querySelectorAll('.nested-options').forEach(el => el.classList.add('hidden'));
             
-            // Автоматически скрыть сообщение через 10 секунд
-            setTimeout(() => {
-                messageBox.className = 'message';
-            }, 10000);
         } else {
-            // Показать сообщение об ошибке
-            messageBox.innerHTML = `
-                <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
-                <h3 style="margin-bottom: 10px;">Ошибка отправки</h3>
-                <p>${result.error || 'Пожалуйста, попробуйте еще раз или свяжитесь с нами по телефону.'}</p>
-            `;
-            messageBox.className = 'message error';
-            console.error('Ошибка сервера:', result);
+            throw new Error('Ошибка Telegram API: ' + result.description);
         }
         
     } catch (error) {
-    // Показать сообщение об ошибке
-    messageBox.innerHTML = `
-        <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
-        <h3 style="margin-bottom: 10px;">Ошибка отправки</h3>
-        <p>${error.message}</p>
-        <p style="margin-top: 10px; font-size: 14px;">
-            Попробуйте эти шаги:
-        </p>
-        <ol style="text-align: left; margin: 10px 20px; font-size: 14px;">
-            <li>Проверьте интернет-соединение</li>
-            <li>Обновите страницу и попробуйте снова</li>
-            <li>Или свяжитесь с нами: +7 (999) 123-45-67</li>
-        </ol>
-        <div style="margin-top: 15px; background: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 12px;">
-            Техническая информация:<br>
-            <code>${error.message}</code>
-        </div>
-    `;
-    messageBox.className = 'message error';
-}
+        // Ошибка
+        console.error('Ошибка:', error);
+        messageBox.innerHTML = `
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Ошибка отправки</h3>
+            <p>Попробуйте позже или позвоните: +7 (999) 123-45-67</p>
+        `;
+        messageBox.className = 'message error';
+    } finally {
+        // Возвращаем кнопку в исходное состояние
+        btnText.textContent = 'Отправить заявку';
+        loader.classList.add('hidden');
+        submitBtn.disabled = false;
+    }
 });
     </script>
 </body>
