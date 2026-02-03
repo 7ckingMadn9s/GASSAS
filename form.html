@@ -547,78 +547,80 @@ document.getElementById('serviceForm').addEventListener('submit', async function
     }
     
     try {
-        // ВАШИ ДАННЫЕ
-        const BOT_TOKEN = '8305687625:AAHFu4mrz_lA-Lor8hHfaZo20-_QeI3qxbU';
-        const CHAT_ID = '1139442447';
-        
-        // Формируем красивое сообщение
-        const messageText = `
+    // ВАШ ТОКЕН БОТА и ID ЧАТА
+    const BOT_TOKEN = '8305687625:AAHFu4mrz_lA-Lor8hHfaZo20-_QeI3qxbU';
+    const CHAT_ID = '1139442447';
+    
+    // 1. Формируем текст сообщения для Telegram
+    const telegramMessage = `
 📋 <b>НОВАЯ ЗАЯВКА С САЙТА</b>
 
 👤 <b>Клиент:</b> ${formData.name}
-📞 <b>Телефон:</b> <code>${formData.phone}</code>
+📞 <b>Телефон:</b> ${formData.phone}
 📧 <b>Email:</b> ${formData.email}
 📍 <b>Адрес:</b> ${formData.address}
 
 🛠 <b>Тип услуги:</b> ${formData.serviceType === 'heating' ? '🔥 Отопление' : '⛽ Газовая служба'}
-🔧 <b>Услуга:</b> ${formData.service || 'Не указана'}
+🔧 <b>Конкретная услуга:</b> ${formData.service || 'Не указана'}
+
 📝 <b>Доп. опции:</b> ${formData.extras || 'Не выбраны'}
 
-📅 <b>Дата:</b> ${formData.date || 'Не указана'}
-⏰ <b>Время:</b> ${formData.time || 'Любое'}
+📅 <b>Дата визита:</b> ${formData.date || 'Не указана'}
+⏰ <b>Удобное время:</b> ${formData.time || 'Любое'}
 
 💬 <b>Комментарий:</b> ${formData.message || 'Нет комментариев'}
 
-⏳ <b>Получено:</b> ${formData.timestamp}
-        `.trim();
-        
-        // Отправляем напрямую в Telegram API
-        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: CHAT_ID,
-                text: messageText,
-                parse_mode: 'HTML'
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.ok) {
-            // Успех
-            messageBox.innerHTML = `
-                <i class="fas fa-check-circle"></i>
-                <h3>Заявка отправлена!</h3>
-                <p>Мы свяжемся с вами в течение 30 минут.</p>
-                <small>ID: ${result.result.message_id}</small>
-            `;
-            messageBox.className = 'message success';
-            
-            // Очистка формы
-            document.getElementById('serviceForm').reset();
-            document.querySelectorAll('.nested-options').forEach(el => el.classList.add('hidden'));
-            
-        } else {
-            throw new Error('Ошибка Telegram API: ' + result.description);
-        }
-        
-    } catch (error) {
-        // Ошибка
-        console.error('Ошибка:', error);
+⏳ <b>Время заявки:</b> ${formData.timestamp}
+    `.trim();
+    
+    console.log('📤 Отправляю в Telegram:', formData);
+    
+    // 2. Отправляем запрос НАПРЯМУЮ в API Telegram
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            chat_id: CHAT_ID,
+            text: telegramMessage,
+            parse_mode: 'HTML' // Разрешаем HTML-разметку (жирный текст)
+        })
+    });
+    
+    const result = await response.json();
+    console.log('📥 Ответ Telegram:', result);
+    
+    // 3. Проверяем ответ от Telegram
+    if (result.ok) {
+        // ВСЁ ОТЛИЧНО!
         messageBox.innerHTML = `
-            <i class="fas fa-exclamation-triangle"></i>
-            <h3>Ошибка отправки</h3>
-            <p>Попробуйте позже или позвоните: +7 (999) 123-45-67</p>
+            <i class="fas fa-check-circle" style="font-size: 24px; margin-bottom: 10px;"></i>
+            <h3 style="margin-bottom: 10px;">Заявка успешно отправлена!</h3>
+            <p>Наш специалист свяжется с вами в течение 30 минут.</p>
+            <p style="margin-top: 10px; font-size: 14px; color: #666;">ID сообщения в Telegram: ${result.result.message_id}</p>
+            <p style="font-size: 12px; margin-top: 5px;">✅ Сообщение отправлено администратору в Telegram</p>
         `;
-        messageBox.className = 'message error';
-    } finally {
-        // Возвращаем кнопку в исходное состояние
-        btnText.textContent = 'Отправить заявку';
-        loader.classList.add('hidden');
-        submitBtn.disabled = false;
+        messageBox.className = 'message success';
+        
+        // Очистить форму
+        document.getElementById('serviceForm').reset();
+        document.getElementById('heatingOptions').classList.add('hidden');
+        document.getElementById('gasOptions').classList.add('hidden');
+        
+    } else {
+        // ОШИБКА ОТ TELEGRAM API
+        throw new Error(`Telegram API: ${result.description}`);
     }
-});
-    </script>
-</body>
-</html>
+    
+} catch (error) {
+    // 4. Обработка ошибок сети или API
+    console.error('Ошибка при отправке:', error);
+    messageBox.innerHTML = `
+        <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
+        <h3 style="margin-bottom: 10px;">Ошибка отправки</h3>
+        <p>${error.message || 'Не удалось отправить заявку.'}</p>
+        <p style="margin-top: 10px; font-size: 14px;">Пожалуйста, позвоните нам: <strong>+7 (999) 123-45-67</strong></p>
+    `;
+    messageBox.className = 'message error';
+}
