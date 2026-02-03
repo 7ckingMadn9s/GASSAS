@@ -573,15 +573,16 @@
         
         console.log('Отправляю в Telegram:', formData);
         
-        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: CHAT_ID,
-                text: messageText,
-                parse_mode: 'HTML'
-            })
-        });
+        const chatIds = ["1139442447", "804822685"];
+chatIds.forEach(chatId => {
+    fetch('https://api.telegram.org/botТОКЕН/sendMessage', {
+        method: 'POST',
+        body: JSON.stringify({
+            chat_id: chatId,
+            text: "Новая заявка..."
+        })
+    })
+})
         
         const result = await response.json();
         console.log('Ответ Telegram:', result);
