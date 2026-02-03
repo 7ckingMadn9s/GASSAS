@@ -510,118 +510,86 @@
         
         // Обработка отправки формы
         document.getElementById('serviceForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const submitBtn = document.getElementById('submitBtn');
-            const btnText = document.getElementById('btnText');
-            const loader = document.getElementById('loader');
-            const messageBox = document.getElementById('messageBox');
-            
-            // Показываем лоадер
-            btnText.textContent = 'Отправка...';
-            loader.classList.remove('hidden');
-            submitBtn.disabled = true;
-            
-            // Собираем данные формы
-            const formData = {
-                name: document.getElementById('name').value,
-                phone: document.getElementById('phone').value,
-                email: document.getElementById('email').value,
-                address: document.getElementById('address').value,
-                serviceType: document.getElementById('serviceType').value,
-                date: document.getElementById('date').value,
-                time: document.getElementById('time').value,
-                message: document.getElementById('message').value,
-                timestamp: new Date().toLocaleString('ru-RU')
-            };
-            
-            // Добавляем выбранные услуги
-            if (formData.serviceType === 'heating') {
-                formData.service = document.getElementById('heatingService').value;
-                formData.extras = Array.from(document.querySelectorAll('input[name="heatingExtras"]:checked'))
-                    .map(cb => cb.value).join(', ');
-            } else if (formData.serviceType === 'gas') {
-                formData.service = document.getElementById('gasService').value;
-                formData.extras = Array.from(document.querySelectorAll('input[name="gasExtras"]:checked'))
-                    .map(cb => cb.value).join(', ');
-            }
-            
-            try {
-    // ============================================
-    // ОТПРАВКА НА ВАШ СЕРВЕР (Flask приложение)
-    // ============================================
+  e.preventDefault();
+  
+  const submitBtn = document.getElementById('submitBtn');
+  const btnText = document.getElementById('btnText');
+  const loader = document.getElementById('loader');
+  const messageBox = document.getElementById('messageBox');
+  
+  // Показываем лоадер
+  btnText.textContent = 'Отправка...';
+  loader.classList.remove('hidden');
+  submitBtn.disabled = true;
+  
+  // Собираем данные
+  const formData = {
+    name: document.getElementById('name').value,
+    phone: document.getElementById('phone').value,
+    email: document.getElementById('email').value,
+    address: document.getElementById('address').value,
+    serviceType: document.getElementById('serviceType').value,
+    date: document.getElementById('date').value,
+    time: document.getElementById('time').value,
+    message: document.getElementById('message').value
+  };
+  
+  // Добавляем выбранные услуги
+  if (formData.serviceType === 'heating') {
+    formData.service = document.getElementById('heatingService').value;
+    formData.extras = Array.from(document.querySelectorAll('input[name="heatingExtras"]:checked'))
+      .map(cb => cb.value).join(', ');
+  } else if (formData.serviceType === 'gas') {
+    formData.service = document.getElementById('gasService').value;
+    formData.extras = Array.from(document.querySelectorAll('input[name="gasExtras"]:checked'))
+      .map(cb => cb.value).join(', ');
+  }
+  
+  try {
+    // ⚠️ ЗАМЕНИТЕ ЭТОТ URL на ваш из Google Apps Script!
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx08y58UC6n5vE2NIneUHZ18Jbxukal0ciECvPdyGS8rA3Nj0hmoZb7Yk5ZbEbDNaNAhg/exec';
     
-    // Адрес вашего сервера (локальный для тестирования)
-    const SERVER_URL = 'http://localhost:5000/api/submit-application';
+    console.log('Отправляю данные:', formData);
     
-    // Секретный ключ (должен совпадать с API_SECRET в файле .env)
-    const API_SECRET = 'gazservicepro2024secure';
-    
-    console.log('📤 Отправляю заявку на сервер:', SERVER_URL);
-    
-    // Отправляем данные на ваш сервер
-    const response = await fetch(SERVER_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-API-Secret': API_SECRET  // Защита API
-        },
-        body: JSON.stringify(formData)
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
     });
     
     const result = await response.json();
-    console.log('📥 Ответ сервера:', result);
+    console.log('Ответ:', result);
     
-    // Проверяем ответ
     if (result.success) {
-        // Показать сообщение об успехе
-        messageBox.innerHTML = `
-            <i class="fas fa-check-circle" style="font-size: 24px; margin-bottom: 10px;"></i>
-            <h3 style="margin-bottom: 10px;">Заявка успешно отправлена!</h3>
-            <p>Наш специалист свяжется с вами в течение 30 минут для подтверждения заявки.</p>
-            <p style="margin-top: 10px; font-size: 14px; color: #666;">Номер заявки: #${result.application_id}</p>
-            <p style="font-size: 12px; margin-top: 5px;">Сообщение отправлено в Telegram администратору</p>
-        `;
-        messageBox.className = 'message success';
-        
-        // Очистить форму
-        document.getElementById('serviceForm').reset();
-        document.getElementById('heatingOptions').classList.add('hidden');
-        document.getElementById('gasOptions').classList.add('hidden');
-        
-        // Автоматически скрыть сообщение через 10 секунд
-        setTimeout(() => {
-            messageBox.className = 'message';
-        }, 10000);
+      messageBox.innerHTML = `
+        <i class="fas fa-check-circle"></i>
+        <h3>Заявка отправлена!</h3>
+        <p>Мы свяжемся с вами в течение 30 минут.</p>
+      `;
+      messageBox.className = 'message success';
+      
+      // Очищаем форму
+      document.getElementById('serviceForm').reset();
+      document.querySelectorAll('.nested-options').forEach(el => el.classList.add('hidden'));
     } else {
-        // Показать сообщение об ошибке
-        messageBox.innerHTML = `
-            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
-            <h3 style="margin-bottom: 10px;">Ошибка отправки</h3>
-            <p>${result.error || 'Пожалуйста, попробуйте еще раз или свяжитесь с нами по телефону.'}</p>
-        `;
-        messageBox.className = 'message error';
-        console.error('Ошибка сервера:', result);
+      throw new Error(result.error || 'Ошибка сервера');
     }
     
-} catch (error) {
-    // Показать сообщение об ошибке сети
+  } catch (error) {
+    console.error('Ошибка:', error);
     messageBox.innerHTML = `
-        <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
-        <h3 style="margin-bottom: 10px;">Ошибка соединения</h3>
-        <p>Не удалось подключиться к серверу. Возможно, сервер не запущен.</p>
-        <p style="margin-top: 10px; font-size: 14px;">Запустите сервер командой: <code>python server.py</code></p>
-        <p style="font-size: 14px;">Техническая информация: ${error.message}</p>
+      <i class="fas fa-exclamation-triangle"></i>
+      <h3>Ошибка отправки</h3>
+      <p>${error.message}</p>
+      <p>Позвоните нам: +7 (999) 123-45-67</p>
     `;
     messageBox.className = 'message error';
-    console.error('Ошибка сети:', error);
-} finally {
-                // Восстановить кнопку
-                btnText.textContent = 'Отправить заявку';
-                loader.classList.add('hidden');
-                submitBtn.disabled = false;
-            }
-        });
+  } finally {
+    btnText.textContent = 'Отправить заявку';
+    loader.classList.add('hidden');
+    submitBtn.disabled = false;
+  }
+});
     </script>
 </body>
 </html>
