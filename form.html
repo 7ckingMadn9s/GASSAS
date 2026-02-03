@@ -601,22 +601,26 @@ document.getElementById('serviceForm').addEventListener('submit', async function
         }
         
     } catch (error) {
-        // Показать сообщение об ошибке сети
-        messageBox.innerHTML = `
-            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
-            <h3 style="margin-bottom: 10px;">Ошибка соединения</h3>
-            <p>Не удалось подключиться к серверу. Возможно, сервер не запущен.</p>
-            <p style="margin-top: 10px; font-size: 14px;">Запустите сервер командой: <code>python server.py</code></p>
-            <p style="font-size: 14px;">Техническая информация: ${error.message}</p>
-        `;
-        messageBox.className = 'message error';
-        console.error('Ошибка сети:', error);
-    } finally {
-        // Восстановить кнопку
-        btnText.textContent = 'Отправить заявку';
-        loader.classList.add('hidden');
-        submitBtn.disabled = false;
-    }
+    // Показать сообщение об ошибке
+    messageBox.innerHTML = `
+        <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
+        <h3 style="margin-bottom: 10px;">Ошибка отправки</h3>
+        <p>${error.message}</p>
+        <p style="margin-top: 10px; font-size: 14px;">
+            Попробуйте эти шаги:
+        </p>
+        <ol style="text-align: left; margin: 10px 20px; font-size: 14px;">
+            <li>Проверьте интернет-соединение</li>
+            <li>Обновите страницу и попробуйте снова</li>
+            <li>Или свяжитесь с нами: +7 (999) 123-45-67</li>
+        </ol>
+        <div style="margin-top: 15px; background: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 12px;">
+            Техническая информация:<br>
+            <code>${error.message}</code>
+        </div>
+    `;
+    messageBox.className = 'message error';
+}
 });
     </script>
 </body>
